@@ -12,4 +12,10 @@ type User struct {
     National_id     string `json:"national_id"  gorm:"unique; not null"`
     Email    string `json:"email" gorm:"unique; null"`
     Password string `json:"-"     gorm:"not null"` // json:"-" = hidden like $hidden in Laravel
+
+        // HasMany through UserRole — like $user->roles in Laravel
+       // HasMany through UserRole
+    UserRoles   []UserRole `json:"user_roles"  gorm:"foreignKey:UserID"`
+    
+
 }
