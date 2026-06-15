@@ -1,10 +1,12 @@
 package helper
 
-
 import (
-	"math/rand"
 	"fmt"
+	"math/rand"
 	"time"
+
+	"BaseProject/config"
+	"BaseProject/models"
 )
 
 func GenerateOtpCode() string {
@@ -30,4 +32,12 @@ func VerifyCode(code string, mobile string) bool {
 	//
 
     return true
+}
+
+func InsertCode(code string, mobile string) error {
+	otp := models.OtpCode{
+		Code:         code,
+		Phone_number: mobile,
+	}
+	return config.DB.Create(&otp).Error
 }
