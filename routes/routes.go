@@ -1,16 +1,18 @@
 package routes
 
 import (
-    // v01 "BaseProject/api/controllers/v01"
-    "github.com/gin-gonic/gin"
+	v01 "BaseProject/api/controllers/v01"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterRoutes(r *gin.Engine) {
-    // api := r.Group("/api/v1")
-    // {
-        // api.GET("/users",        v01.GetUsers)
-        // api.POST("/users",       v01.CreateUser)
-        // api.GET("/users/:id",    v01.GetUser)
-        // api.DELETE("/users/:id", v01.DeleteUser)
-    // }
+	authController := &v01.AuthController{}
+
+	api := r.Group("/api/v1/auth")
+	{
+		api.POST("/send-otp-code", authController.SendOtpCode)
+		api.POST("/login-with-otp", authController.LoginWithOtp)
+		// api.POST("/login-with-password", authController.LoginWithPassword)
+	}
 }
