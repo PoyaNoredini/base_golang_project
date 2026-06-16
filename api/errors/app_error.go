@@ -34,4 +34,11 @@ func Internal(msg string) *AppError    {
         Status: http.StatusInternalServerError,
         Message: msg,
      }
+
+func Forbidden(msg string) *AppError {
+   return &AppError{
+      Status: http.StatusForbidden,
+      Message: msg,
+   }
+}
 }
