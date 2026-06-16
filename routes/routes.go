@@ -13,6 +13,8 @@ func RegisterRoutes(r *gin.Engine) {
 	{
 		api.POST("/send-otp-code", authController.SendOtpCode)
 		api.POST("/login-with-otp", authController.LoginWithOtp)
-		// api.POST("/login-with-password", authController.LoginWithPassword)
+		api.POST("/login-with-password", authController.LoginWithPassword)
+		api.POST("/register", authController.Register)
+
 	}
 }
