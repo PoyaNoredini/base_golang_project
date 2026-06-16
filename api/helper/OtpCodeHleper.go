@@ -37,7 +37,7 @@ func VerifyCode(code string, mobile string) bool {
 func InsertCode(code string, mobile string) error {
 	otp := models.OtpCode{
 		Code:         code,
-		Phone_number: mobile,
+		PhoneNumber: mobile,
 	}
 	return config.DB.Create(&otp).Error
 }
