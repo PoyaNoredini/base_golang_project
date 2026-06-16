@@ -1,5 +1,8 @@
 package validations
 
+type SendOtpRequest struct {
+    PhoneNumber string `json:"phone_number" binding:"required,len=11"`
+}
 
 type LoginWithPasswordRequest struct {
     Phone    string `json:"phone"    binding:"required,len=11"`
@@ -11,11 +14,11 @@ type LoginWithOtpRequest struct {
     Code  string `json:"code"  binding:"required,len=6"`
 }
 
-// type RegisterRequest struct {
-//     FirstName   string `json:"first_name"   binding:"required,min=2,max=50"`
-//     LastName    string `json:"last_name"    binding:"required,min=2,max=50"`
-//     Phone       string `json:"phone"        binding:"required,len=11"`
-//     NationalID  string `json:"national_id"  binding:"required,len=10"`
-//     Password    string `json:"password"     binding:"required,min=6"`
-//     Email       string `json:"email"        binding:"omitempty,email"` // optional
-// }
+type RegisterRequest struct {
+    FirstName   string `json:"first_name"   binding:"required,min=2,max=50"`
+    LastName    string `json:"last_name"    binding:"required,min=2,max=50"`
+    Phone       string `json:"phone"        binding:"required,len=11"`
+    NationalID  string `json:"national_id"  binding:"required,len=10"`
+    Password    string `json:"password"     binding:"required,min=6"`
+    Email       string `json:"email"        binding:"omitempty,email"` // optional
+}
