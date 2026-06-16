@@ -1,138 +1,113 @@
 package v01
 
 import (
-	"BaseProject/api/controllers"
-	"BaseProject/api/helper"
-	"BaseProject/api/validations"
-	"BaseProject/config"
-	"BaseProject/models"
-	"errors"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
+    errors "BaseProject/api/errors"
+    "BaseProject/api/controllers"
+    "BaseProject/api/helper"
+    "BaseProject/api/validations"
+    "BaseProject/config"
+    "BaseProject/models"
+    "github.com/gin-gonic/gin"
 )
 
 type AuthController struct {
-	controllers.BaseController
+    controllers.BaseController
 }
 
 func (c *AuthController) SendOtpCode(ctx *gin.Context) {
-	var request validations.SendOtpRequest
+    c.Handle(ctx, func() (interface{}, *errors.AppError) {
+        var req validations.SendOtpRequest
+        if err := ctx.ShouldBindJSON(&req); err != nil {
+            return nil, errors.BadRequest(err.Error())
+        }
 
-	if err := ctx.ShouldBindJSON(&request); err != nil {
-		c.Error(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
+        otpCode := helper.GenerateOtpCode()
 
-	otpCode := helper.GenerateOtpCode()
-	if err := helper.InsertCode(otpCode, request.PhoneNumber); err != nil {
-		c.Error(ctx, http.StatusInternalServerError, "Failed to save OTP code")
-		return
-	}
 
-	c.Success(ctx, gin.H{"message": "OTP code sent successfully", "otp_code": otpCode})
+        return c.Success(ctx, gin.H{"message": "OTP code sent successfully", "otp_code": otpCode})
+    })
 }
 
 func (c *AuthController) LoginWithOtp(ctx *gin.Context) {
-	var request validations.LoginWithOtpRequest
+    c.Handle(ctx, func() (interface{}, *errors.AppError) {
+        var req validations.LoginWithOtpRequest
+        if err := ctx.ShouldBindJSON(&req); err != nil {
+            return nil, errors.BadRequest(err.Error())
+        }
 
-	if err := ctx.ShouldBindJSON(&request); err != nil {
-		c.Error(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
+        if !helper.VerifyCode(req.Code, req.Phone) {
+            return nil, errors.Unauthorized("Invalid OTP code")
+        }
 
-	if !helper.VerifyCode(request.Code, request.Phone) {
-		c.Error(ctx, http.StatusUnauthorized, "Invalid OTP code")
-		return
-	}
+        var user models.User
+        if err := config.DB.Where("phone_number = ?", req.Phone).First(&user).Error; err != nil {
+            return nil, c.HandleDBError(err, "User not found")
+        }
 
-	var user models.User
-	result := config.DB.Where("phone_number = ?", request.Phone).First(&user)
+        token, err := helper.GenerateToken(user.ID, user.Phone_number)
+        if err != nil {
+            return nil, errors.Internal("Internal server error")
+        }
 
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		c.Error(ctx, http.StatusNotFound, "User not found")
-		return
-	}
-
-	if result.Error != nil {
-		c.Error(ctx, http.StatusInternalServerError, "Database error")
-		return
-	}
-
-	jwtToken, err := helper.GenerateToken(user.ID, user.Phone_number)
-	if err != nil {
-		c.Error(ctx, http.StatusInternalServerError, "Internal server error")
-		return
-	}
-
-	c.Success(ctx, gin.H{"message": "Login successful", "token": jwtToken, "user": user})
+        return c.Success(ctx, gin.H{"message": "Login successful", "token": token, "user": user})
+    })
 }
 
 func (c *AuthController) LoginWithPassword(ctx *gin.Context) {
-    var request validations.LoginWithPasswordRequest
+    c.Handle(ctx, func() (interface{}, *errors.AppError) {
+        var req validations.LoginWithPasswordRequest
+        if err := ctx.ShouldBindJSON(&req); err != nil {
+            return nil, errors.BadRequest(err.Error())
+        }
 
-    if err := ctx.ShouldBindJSON(&request); err != nil {
-        c.Error(ctx, http.StatusBadRequest, err.Error())
-        return
-    }
+        var user models.User
+        if err := config.DB.Where("phone_number = ?", req.Phone).First(&user).Error; err != nil {
+            return nil, c.HandleDBError(err, "User not found")
+        }
 
-    // Fetch user FIRST
-    var user models.User
-    result := config.DB.Where("phone_number = ?", request.Phone).First(&user)
+        if !helper.CheckPassword(req.Password, user.Password) {
+            return nil, errors.Unauthorized("Invalid password")
+        }
 
-    if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-        c.Error(ctx, http.StatusNotFound, "User not found")
-        return
-    }
+        token, err := helper.GenerateToken(user.ID, user.Phone_number)
+        if err != nil {
+            return nil, errors.Internal("Internal server error")
+        }
 
-    if !helper.CheckPassword(request.Password, user.Password) {
-        c.Error(ctx, http.StatusUnauthorized, "Invalid password")
-        return
-    }
-
-    jwtToken, err := helper.GenerateToken(user.ID, user.Phone_number)
-    if err != nil {
-        c.Error(ctx, http.StatusInternalServerError, "Internal server error")
-        return
-    }
-
-    c.Success(ctx, gin.H{"message": "Login successful", "token": jwtToken, "user": user})
+        return c.Success(ctx, gin.H{"message": "Login successful", "token": token, "user": user})
+    })
 }
 
-
 func (c *AuthController) Register(ctx *gin.Context) {
-	var request validations.RegisterRequest
+    c.Handle(ctx, func() (interface{}, *errors.AppError) {
+        var req validations.RegisterRequest
+        if err := ctx.ShouldBindJSON(&req); err != nil {
+            return nil, errors.BadRequest(err.Error())
+        }
 
-	if err := ctx.ShouldBindJSON(&request); err != nil {
-		c.Error(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
+        password, err := helper.HashPassword(req.Password)
+        if err != nil {
+            return nil, errors.Internal("Failed to hash password")
+        }
 
-	password, err := helper.HashPassword(request.Password)
-	if err != nil {
-		c.Error(ctx, http.StatusInternalServerError, "Failed to hash password")
-		return
-	}
+        user := models.User{
+            First_name:   req.FirstName,
+            Last_name:    req.LastName,
+            Phone_number: req.Phone,
+            National_id:  req.NationalID,
+            Email:        req.Email,
+            Password:     password,
+        }
 
-	user := models.User{
-		First_name: request.FirstName,
-		Last_name: request.LastName,
-		Phone_number: request.Phone,
-		National_id: request.NationalID,
-		Email: request.Email,
-		Password: password,
-	}
+        if err := config.DB.Create(&user).Error; err != nil {
+            return nil, errors.Internal("Failed to create user")
+        }
 
-	if err := config.DB.Create(&user).Error; err != nil {
-		c.Error(ctx, http.StatusInternalServerError, "Failed to create user")
-		return
-	}
-	jwtToken, err := helper.GenerateToken(user.ID, user.Phone_number)
-    if err != nil {
-        c.Error(ctx, http.StatusInternalServerError, "Internal server error")
-        return
-    }
+        token, err := helper.GenerateToken(user.ID, user.Phone_number)
+        if err != nil {
+            return nil, errors.Internal("Internal server error")
+        }
 
-	c.Success(ctx, gin.H{"message": "User created successfully", "token": jwtToken, "user": user})
+        return c.Success(ctx, gin.H{"message": "User created successfully", "token": token, "user": user})
+    })
 }
