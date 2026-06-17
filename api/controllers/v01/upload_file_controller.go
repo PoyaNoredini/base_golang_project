@@ -4,13 +4,8 @@ import (
 	appErrors "BaseProject/api/error"
 	"BaseProject/api/controllers"
 	"BaseProject/api/service"
-	"BaseProject/models"
 	"fmt"
-	"net/http"
-	"BaseProject/config"
 	"os"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 )
 
