@@ -7,6 +7,9 @@ import (
     "github.com/golang-jwt/jwt/v5"
 )
 
+var ErrTokenInvalid = errors.New("invalid token") 
+var ErrTokenExpired = errors.New("token expired")
+
 type Claims struct {
     UserID uint   `json:"user_id"`
     Phone  string `json:"phone"`
@@ -36,7 +39,7 @@ func ParseToken(tokenStr string) (*Claims, error) {
     })
 
     if err != nil {
-        return nil, errors.New("invalid token")
+        return nil, ErrTokenInvalid
     }
 
     claims, ok := token.Claims.(*Claims)
