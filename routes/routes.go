@@ -12,4 +12,5 @@ func RegisterRoutes(r *gin.Engine) {
 
     RegisterAuthRoutes(api)
     RegisterFileRoutes(api, middleware.Auth())
+    RegisterUserRoutes(api, middleware.Auth())
 }
