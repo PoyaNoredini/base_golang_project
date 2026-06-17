@@ -36,6 +36,7 @@ func ConnectDB() {
 		&models.OtpCode{},
 		&models.UserRole{},
 		&models.RolePermission{},
+		&models.UploadFiles{},
 	)
 	if err != nil {
 		log.Fatal("❌ AutoMigrate failed:", err)
