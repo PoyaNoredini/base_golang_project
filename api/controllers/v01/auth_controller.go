@@ -7,6 +7,7 @@ import (
     "BaseProject/api/validations"
     "BaseProject/config"
     "BaseProject/models"
+    "BaseProject/api/resource"
     "github.com/gin-gonic/gin"
 )
 
@@ -49,7 +50,7 @@ func (c *AuthController) LoginWithOtp(ctx *gin.Context) {
             return nil, appErrors.Internal("Internal server error")
         }
 
-        return gin.H{"message": "Login successful", "token": token, "user": user}, nil
+        return gin.H{"message": "Login successful", "token": token, "user": resource.NewUserResource(user)}, nil
     })
 }
 
@@ -61,7 +62,7 @@ func (c *AuthController) LoginWithPassword(ctx *gin.Context) {
         }
 
         var user models.User
-        if err := config.DB.Where("phone_number = ?", req.Phone).First(&user).Error; err != nil {
+        if err := config.DB.Preload("UserRoles.Role").Where("phone_number = ?", req.Phone).First(&user).Error; err != nil {
             return nil, c.HandleDBError(err, "User not found")
         }
 
@@ -74,7 +75,7 @@ func (c *AuthController) LoginWithPassword(ctx *gin.Context) {
             return nil, appErrors.Internal("Internal server error")
         }
 
-        return gin.H{"message": "Login successful", "token": token, "user": user}, nil
+        return gin.H{"message": "Login successful", "token": token, "user": resource.NewUserResource(user)}, nil
     })
 }
 
@@ -108,6 +109,6 @@ func (c *AuthController) Register(ctx *gin.Context) {
             return nil, appErrors.Internal("Internal server error")
         }
 
-        return gin.H{"message": "User created successfully", "token": token, "user": user}, nil
+        return gin.H{"message": "User created successfully", "token": token, "user": resource.NewUserResource(user)}, nil
     })
 }
