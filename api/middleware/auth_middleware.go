@@ -1,9 +1,8 @@
 package middleware
 
 import (
-    errors "BaseProject/api/errors"
+    appErrors "BaseProject/api/error"
     "BaseProject/api/helper"
-    "errors"
     "github.com/gin-gonic/gin"
 )
 
@@ -11,19 +10,19 @@ func Auth() gin.HandlerFunc {
     return func(ctx *gin.Context) {
         token := extractToken(ctx)
         if token == "" {
-            respondAndAbort(ctx, errors.Unauthorized("Authorization token is required"))
+            respondAndAbort(ctx, appErrors.Unauthorized("Authorization token is required"))
             return
         }
 
         claims, err := helper.ParseToken(token)
         if err != nil {
             switch {
-            case errors.Is(err, helper.ErrTokenExpired):
-                respondAndAbort(ctx, errors.Unauthorized("Token has expired"))
-            case errors.Is(err, helper.ErrTokenInvalid):
-                respondAndAbort(ctx, errors.Unauthorized("Invalid token"))
+            case err == helper.ErrTokenExpired:
+                respondAndAbort(ctx, appErrors.Unauthorized("Token has expired"))
+            case err == helper.ErrTokenInvalid:
+                respondAndAbort(ctx, appErrors.Unauthorized("Invalid token"))
             default:
-                respondAndAbort(ctx, errors.Internal("Authentication error"))
+                respondAndAbort(ctx, appErrors.Internal("Authentication error"))
             }
             return
         }
@@ -45,7 +44,7 @@ func extractToken(ctx *gin.Context) string {
     return ""
 }
 
-func respondAndAbort(ctx *gin.Context, err *errors.AppError) {
+func respondAndAbort(ctx *gin.Context, err *appErrors.AppError) {
     ctx.AbortWithStatusJSON(err.Status, gin.H{
         "code":    err.Status,
         "message": err.Message,
