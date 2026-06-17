@@ -1,7 +1,7 @@
 package middleware
 
 import (
-    errors "BaseProject/api/errors"
+    appErrors "BaseProject/api/error"
     "BaseProject/config"
     "BaseProject/models"
     "github.com/gin-gonic/gin"
@@ -12,7 +12,7 @@ func RequirePermission(permission string) gin.HandlerFunc {
         // 1. get user_id from context — Auth middleware already set this
         userID, exists := ctx.Get("user_id")
         if !exists {
-            respondAndAbort(ctx, errors.Unauthorized("Unauthorized access!"))
+            respondAndAbort(ctx, appErrors.Unauthorized("Unauthorized access!"))
             return
         }
 
@@ -20,7 +20,7 @@ func RequirePermission(permission string) gin.HandlerFunc {
         var permissionRecord models.Permission
         if err := config.DB.Where("title = ?", permission).First(&permissionRecord).Error; err != nil {
             // permission title doesn't exist in the system
-            respondAndAbort(ctx, errors.Forbidden("Access denied!"))
+            respondAndAbort(ctx, appErrors.Forbidden("Access denied!"))
             return
         }
 
@@ -36,7 +36,7 @@ func RequirePermission(permission string) gin.HandlerFunc {
             Count(&count)
 
         if count == 0 {
-            respondAndAbort(ctx, errors.Forbidden("Access denied!"))
+            respondAndAbort(ctx, appErrors.Forbidden("Access denied!"))
             return
         }
 
