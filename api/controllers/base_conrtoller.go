@@ -1,17 +1,18 @@
 package controllers
 
 import (
-    errors "BaseProject/api/errors"
+    appErrors "BaseProject/api/error"
     "github.com/gin-gonic/gin"
     "gorm.io/gorm"
     "net/http"
+    "errors"
 )
 
 type BaseController struct{}
 
 func (c *BaseController) Success(ctx *gin.Context, data interface{}) {
     ctx.JSON(http.StatusOK, gin.H{
-        "code":    0,
+        "status":  true,
         "message": "success",
         "data":    data,
     })
@@ -19,13 +20,13 @@ func (c *BaseController) Success(ctx *gin.Context, data interface{}) {
 
 func (c *BaseController) Error(ctx *gin.Context, code int, message string) {
     ctx.JSON(code, gin.H{
-        "code":    code,
+        "status":  false,
         "message": message,
     })
 }
 
 
-func (c *BaseController) Handle(ctx *gin.Context, fn func() (interface{}, *errors.AppError)) {
+func (c *BaseController) Handle(ctx *gin.Context, fn func() (interface{}, *appErrors.AppError)) {
     data, err := fn()
     if err != nil {
         c.Error(ctx, err.Status, err.Message)
@@ -35,9 +36,9 @@ func (c *BaseController) Handle(ctx *gin.Context, fn func() (interface{}, *error
 }
 
 
-func (c *BaseController) HandleDBError(err error, notFoundMsg string) *errors.AppError {
+func (c *BaseController) HandleDBError(err error, notFoundMsg string) *appErrors.AppError {
     if errors.Is(err, gorm.ErrRecordNotFound) {
-        return errors.NotFound(notFoundMsg)
+        return appErrors.NotFound(notFoundMsg)
     }
-    return errors.Internal("Database error")
+    return appErrors.Internal("Database error")
 }
